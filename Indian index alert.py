@@ -3,6 +3,7 @@ import yfinance as yf
 import requests
 import logging
 from datetime import datetime
+import pytz  # Kolkata Time (IST) এর জন্য
 import ssl
 import certifi
 import os
@@ -14,17 +15,11 @@ keep_alive()
 os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # Telegram Bot Config
-TELEGRAM_BOT_TOKEN = "8100205821:AAE0sGJhnA8ySkuSusEXSf9bYU5OU6sFzVg"
-TELEGRAM_CHAT_ID = "8191014589"
-TELEGRAM_GROUP_CHAT_ID = "-1002689167916"
+TELEGRAM_BOT_TOKEN = "7615583534:AAHaKfWLN7NP83LdmR32i6BfNWqq73nBsAE"
+TELEGRAM_CHANNEL_USERNAME = "@treadalartindia"
 
-# Top 20 Indian Stocks + Indexes (Yahoo Tickers)
-INDIAN_STOCKS = [
-    "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "ICICIBANK.NS",
-    "HINDUNILVR.NS", "LT.NS", "SBIN.NS", "KOTAKBANK.NS", "ITC.NS"
-]
+# Top Indian Indices (Yahoo Tickers) - Only Indices for this case
 INDICES = ["^NSEI", "^NSEBANK", "^BSESN", "^NSEFIN"]
-ALL_SYMBOLS = INDIAN_STOCKS + INDICES
 
 # Timeframes
 timeframes = {
@@ -82,36 +77,29 @@ def liquidity_grab_order_block(df):
         return "SELL", entry, sl, tp, tsl, "\U0001F534"
     return "NO SIGNAL", None, None, None, None, None
 
+# Kolkata Timezone (IST)
+kolkata_tz = pytz.timezone("Asia/Kolkata")
+
 # Main Loop
 while True:
     signal_found = False
 
-    for stock in ALL_SYMBOLS:
+    for stock in INDICES:  # Loop only over indices
         if stock in active_trades:
             df = fetch_data(stock, "15m")
             if df is not None and not df.empty:
                 last_price = df['close'].iloc[-1]
                 trade = active_trades[stock]
-                now_time = datetime.now().strftime('%Y-%m-%d %H:%M')
+                now_time = datetime.now(kolkata_tz).strftime('%Y-%m-%d %H:%M')
 
                 if trade['direction'] == "BUY":
                     if last_price >= trade['tp']:
-                        send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_CHAT_ID)
-                        send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_GROUP_CHAT_ID)
+                        send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`\nSignal: {trade['direction']}", TELEGRAM_CHAT_ID)
+                        send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`\nSignal: {trade['direction']}", TELEGRAM_GROUP_CHAT_ID)
                         del active_trades[stock]  # Remove trade after TP hit
                     elif last_price <= trade['sl']:
-                        send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_CHAT_ID)
-                        send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_GROUP_CHAT_ID)
-                        del active_trades[stock]  # Remove trade after SL hit
-
-                elif trade['direction'] == "SELL":
-                    if last_price <= trade['tp']:
-                        send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_CHAT_ID)
-                        send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_GROUP_CHAT_ID)
-                        del active_trades[stock]  # Remove trade after TP hit
-                    elif last_price >= trade['sl']:
-                        send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_CHAT_ID)
-                        send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_GROUP_CHAT_ID)
+                        send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`\nSignal: {trade['direction']}", TELEGRAM_CHAT_ID)
+                        send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`\nSignal: {trade['direction']}", TELEGRAM_GROUP_CHAT_ID)
                         del active_trades[stock]  # Remove trade after SL hit
             continue
 
@@ -120,7 +108,7 @@ while True:
             if df is not None and not df.empty:
                 signal, entry, sl, tp, tsl, emoji = liquidity_grab_order_block(df)
                 if signal != "NO SIGNAL":
-                    signal_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    signal_time = datetime.now(kolkata_tz).strftime('%Y-%m-%d %H:%M:%S')
                     msg = (
                         f"{emoji} *{signal} Signal for {stock}*\n"
                         f"Type: {label}\nTimeframe: {tf}\nTime: `{signal_time}`\n"
@@ -143,8 +131,8 @@ while True:
 
     # No signal alert
     if not signal_found and (time.time() - last_signal_time > 3600):
-        send_telegram_message("⚠️ No Signal in the Last 1 Hour (Indian Stocks + Index)", TELEGRAM_CHAT_ID)
-        send_telegram_message("⚠️ No Signal in the Last 1 Hour (Indian Stocks + Index)", TELEGRAM_GROUP_CHAT_ID)
+        send_telegram_message("⚠️ No Signal in the Last 1 Hour (Indian Indices)", TELEGRAM_CHAT_ID)
+        send_telegram_message("⚠️ No Signal in the Last 1 Hour (Indian Indices)", TELEGRAM_GROUP_CHAT_ID)
         last_signal_time = time.time()
 
     time.sleep(60)
