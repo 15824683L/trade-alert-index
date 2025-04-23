@@ -1,3 +1,4 @@
+yfinance
 requests
-pyotp
-websocket-client
+certifi
+keep_alive
