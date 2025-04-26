@@ -115,7 +115,8 @@ while True:
         for label, tf in timeframes.items():
             df = fetch_data(stock, tf)
             if df is not None and not df.empty:
-                signal, entry, sl, tp, tsl, emoji = liquidity_grab_order_block(df)
+                def liquidity_grab_order_block_with_vwap(df):
+
                 if signal != "NO SIGNAL":
                     signal_time = datetime.now(kolkata_tz).strftime('%Y-%m-%d %H:%M:%S')
                     msg = (
