@@ -116,8 +116,8 @@ while True:
             df = fetch_data(stock, tf)
             if df is not None and not df.empty:
                 def liquidity_grab_order_block_with_vwap(df):
-
-                if signal != "NO SIGNAL":
+    pass
+            if signal != "NO SIGNAL":
                     signal_time = datetime.now(kolkata_tz).strftime('%Y-%m-%d %H:%M:%S')
                     msg = (
                         f"{emoji} *{signal} Signal for {stock}*\n"
