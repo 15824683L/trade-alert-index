@@ -1,4 +1,5 @@
 yfinance
 requests
+pytz
 certifi
-flask
+Flask
