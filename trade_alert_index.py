@@ -47,10 +47,7 @@ def fetch_data(symbol):
 
 def ema_combo_strategy(df):
     df['21ema'] = df['close'].ewm(span=21, adjust=False).mean()
-
-    if len(df) < 3:
-        return None, None, None, None, None, None  # not enough data
-
+    
     last = df.iloc[-1]
     prev = df.iloc[-2]
 
@@ -58,7 +55,7 @@ def ema_combo_strategy(df):
     entry = sl = tp = tsl = emoji = ""
 
     # ---- Breakout BUY ----
-    if float(prev['close']) > float(prev['21ema']) and float(last['high']) > float(prev['high']):
+    if prev['close'] > prev['21ema'] and last['high'] > prev['high']:
         signal = "BUY"
         entry = float(last['high'])
         sl = float(prev['low'])
@@ -67,7 +64,7 @@ def ema_combo_strategy(df):
         emoji = "🟢"
 
     # ---- Breakout SELL ----
-    elif float(prev['close']) < float(prev['21ema']) and float(last['low']) < float(prev['low']):
+    elif prev['close'] < prev['21ema'] and last['low'] < prev['low']:
         signal = "SELL"
         entry = float(last['low'])
         sl = float(prev['high'])
@@ -76,7 +73,7 @@ def ema_combo_strategy(df):
         emoji = "🔴"
 
     # ---- Rejection BUY ----
-    elif float(prev['low']) < float(prev['21ema']) and float(prev['close']) > float(prev['21ema']) and float(last['high']) > float(prev['high']):
+    elif prev['low'] < prev['21ema'] and prev['close'] > prev['21ema'] and last['high'] > prev['high']:
         signal = "BUY"
         entry = float(last['high'])
         sl = float(prev['low'])
@@ -85,7 +82,7 @@ def ema_combo_strategy(df):
         emoji = "🟢"
 
     # ---- Rejection SELL ----
-    elif float(prev['high']) > float(prev['21ema']) and float(prev['close']) < float(prev['21ema']) and float(last['low']) < float(prev['low']):
+    elif prev['high'] > prev['21ema'] and prev['close'] < prev['21ema'] and last['low'] < prev['low']:
         signal = "SELL"
         entry = float(last['low'])
         sl = float(prev['high'])
@@ -93,7 +90,9 @@ def ema_combo_strategy(df):
         tsl = entry - (sl - entry)
         emoji = "🔴"
 
-    return signal, entry, sl, tp, tsl, emoji
+    return signal, round(entry, 2), round(sl, 2), round(tp, 2), round(tsl, 2), emoji
+
+
 # MAIN LOOP
 while True:
     signal_found = False
