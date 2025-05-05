@@ -43,32 +43,35 @@ def fetch_data(symbol):
         logging.error(f"Error fetching {symbol} - {e}")
         return None
 
+# ... আগের লাইনের সব ঠিক আছে ...
+
 def ema_breakout_strategy(df):
     df['21ema'] = df['close'].ewm(span=21, adjust=False).mean()
-    
+
     last = df.iloc[-1:]
     prev = df.iloc[-2:-1]
 
     signal = None
     entry = sl = tp = tsl = emoji = ""
 
-    if float(prev['close'].iloc[0]) > float(prev['21ema'].iloc[0]) and float(last['high'].iloc[0]) > float(prev['high'].iloc[0]):
+    if prev['close'].iloc[0].item() > prev['21ema'].iloc[0].item() and last['high'].iloc[0].item() > prev['high'].iloc[0].item():
         signal = "BUY"
-        entry = last['high'].iloc[0]
-        sl = prev['low'].iloc[0]
+        entry = last['high'].iloc[0].item()
+        sl = prev['low'].iloc[0].item()
         tp = entry + (entry - sl) * 1.5
         tsl = entry + (entry - sl)
         emoji = "🟢"
 
-    elif float(prev['close'].iloc[0]) < float(prev['21ema'].iloc[0]) and float(last['low'].iloc[0]) < float(prev['low'].iloc[0]):
+    elif prev['close'].iloc[0].item() < prev['21ema'].iloc[0].item() and last['low'].iloc[0].item() < prev['low'].iloc[0].item():
         signal = "SELL"
-        entry = last['low'].iloc[0]
-        sl = prev['high'].iloc[0]
+        entry = last['low'].iloc[0].item()
+        sl = prev['high'].iloc[0].item()
         tp = entry - (sl - entry) * 1.5
         tsl = entry - (sl - entry)
         emoji = "🔴"
 
     return signal, entry, sl, tp, tsl, emoji
+
 # MAIN LOOP
 while True:
     signal_found = False
@@ -78,14 +81,13 @@ while True:
         if df is not None and not df.empty:
             signal, entry, sl, tp, tsl, emoji = ema_breakout_strategy(df)
 
-            if signal != "NO SIGNAL" and stock not in active_trades:
+            if signal and stock not in active_trades:
                 signal_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 msg = (
                     f"{emoji} *{signal} Signal for {stock}*\n"
                     f"Time: `{signal_time}`\n"
                     f"Entry: `{entry}`\nSL: `{sl}`\nTP: `{tp}`\nTSL: `{tsl}`"
                 )
-                send_telegram_message(msg, TELEGRAM_GROUP_CHAT_ID)
                 send_telegram_message(msg, TELEGRAM_GROUP_CHAT_ID)
 
                 active_trades[stock] = {
@@ -97,30 +99,29 @@ while True:
                 }
                 signal_found = True
 
-        # Check existing trade hit TP or SL
         if stock in active_trades:
-            last_price = df['close'].iloc[-1]
+            last_price = df['close'].iloc[-1].item()
             trade = active_trades[stock]
             now_time = datetime.now().strftime('%Y-%m-%d %H:%M')
 
             if trade['direction'] == "BUY":
                 if last_price >= trade['tp']:
-                    send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_CHAT_ID)
+                    send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_GROUP_CHAT_ID)
                     del active_trades[stock]
                 elif last_price <= trade['sl']:
-                    send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_CHAT_ID)
+                    send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_GROUP_CHAT_ID)
                     del active_trades[stock]
 
             elif trade['direction'] == "SELL":
                 if last_price <= trade['tp']:
-                    send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_CHAT_ID)
+                    send_telegram_message(f"✅ *TP HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_GROUP_CHAT_ID)
                     del active_trades[stock]
                 elif last_price >= trade['sl']:
-                    send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_CHAT_ID)
+                    send_telegram_message(f"🛑 *SL HIT for {stock}*\nTime: `{now_time}`\nPrice: `{last_price}`", TELEGRAM_GROUP_CHAT_ID)
                     del active_trades[stock]
 
     if not signal_found and (time.time() - last_signal_time > 3600):
-        send_telegram_message("⚠️ No Signal in the Last 1 Hour (21 EMA Breakout)", TELEGRAM_CHAT_ID)
+        send_telegram_message("⚠️ No Signal in the Last 1 Hour (21 EMA Breakout)", TELEGRAM_GROUP_CHAT_ID)
         last_signal_time = time.time()
 
     time.sleep(60)
