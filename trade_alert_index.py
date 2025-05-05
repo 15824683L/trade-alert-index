@@ -51,7 +51,7 @@ def ema_breakout_strategy(df):
     prev = df.iloc[-2]
 
     # BUY setup
-    if prev['close'] > prev['21ema'] and last['high'] > prev['high']:
+    if float(prev['close']) > float(prev['21ema']) and float(last['high']) > float(prev['high']):
         entry = round(prev['high'], 2)
         sl = round(prev['low'], 2)
         tp = round(entry + (entry - sl) * 2, 2)
@@ -59,7 +59,7 @@ def ema_breakout_strategy(df):
         return "BUY", entry, sl, tp, tsl, "🟢"
 
     # SELL setup
-    if prev['close'] < prev['21ema'] and last['low'] < prev['low']:
+    if float(prev['close']) < float(prev['21ema']) and float(last['low']) < float(prev['low']):
         entry = round(prev['low'], 2)
         sl = round(prev['high'], 2)
         tp = round(entry - (sl - entry) * 2, 2)
@@ -67,7 +67,6 @@ def ema_breakout_strategy(df):
         return "SELL", entry, sl, tp, tsl, "🔴"
 
     return "NO SIGNAL", None, None, None, None, None
-
 # MAIN LOOP
 while True:
     signal_found = False
