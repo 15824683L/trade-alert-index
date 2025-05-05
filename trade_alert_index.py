@@ -48,50 +48,65 @@ def fetch_data(symbol):
 def ema_combo_strategy(df):
     df['21ema'] = df['close'].ewm(span=21, adjust=False).mean()
     
+    if len(df) < 3:
+        return None, None, None, None, None, None
+
     last = df.iloc[-1]
     prev = df.iloc[-2]
 
     signal = None
     entry = sl = tp = tsl = emoji = ""
 
-    # ---- Breakout BUY ----
-    if prev['close'] > prev['21ema'] and last['high'] > prev['high']:
-        signal = "BUY"
-        entry = float(last['high'])
-        sl = float(prev['low'])
-        tp = entry + (entry - sl) * 1.5
-        tsl = entry + (entry - sl)
-        emoji = "🟢"
+    try:
+        # Convert all to scalars
+        prev_close = prev['close'].item() if hasattr(prev['close'], 'item') else prev['close']
+        prev_ema = prev['21ema'].item() if hasattr(prev['21ema'], 'item') else prev['21ema']
+        last_high = last['high'].item() if hasattr(last['high'], 'item') else last['high']
+        prev_high = prev['high'].item() if hasattr(prev['high'], 'item') else prev['high']
+        prev_low = prev['low'].item() if hasattr(prev['low'], 'item') else prev['low']
+        last_low = last['low'].item() if hasattr(last['low'], 'item') else last['low']
 
-    # ---- Breakout SELL ----
-    elif prev['close'] < prev['21ema'] and last['low'] < prev['low']:
-        signal = "SELL"
-        entry = float(last['low'])
-        sl = float(prev['high'])
-        tp = entry - (sl - entry) * 1.5
-        tsl = entry - (sl - entry)
-        emoji = "🔴"
+        # ---- Breakout BUY ----
+        if prev_close > prev_ema and last_high > prev_high:
+            signal = "BUY"
+            entry = last_high
+            sl = prev_low
+            tp = entry + (entry - sl) * 1.5
+            tsl = entry + (entry - sl)
+            emoji = "🟢"
 
-    # ---- Rejection BUY ----
-    elif prev['low'] < prev['21ema'] and prev['close'] > prev['21ema'] and last['high'] > prev['high']:
-        signal = "BUY"
-        entry = float(last['high'])
-        sl = float(prev['low'])
-        tp = entry + (entry - sl) * 1.5
-        tsl = entry + (entry - sl)
-        emoji = "🟢"
+        # ---- Breakout SELL ----
+        elif prev_close < prev_ema and last_low < prev_low:
+            signal = "SELL"
+            entry = last_low
+            sl = prev_high
+            tp = entry - (sl - entry) * 1.5
+            tsl = entry - (sl - entry)
+            emoji = "🔴"
 
-    # ---- Rejection SELL ----
-    elif prev['high'] > prev['21ema'] and prev['close'] < prev['21ema'] and last['low'] < prev['low']:
-        signal = "SELL"
-        entry = float(last['low'])
-        sl = float(prev['high'])
-        tp = entry - (sl - entry) * 1.5
-        tsl = entry - (sl - entry)
-        emoji = "🔴"
+        # ---- Rejection BUY ----
+        elif prev_low < prev_ema and prev_close > prev_ema and last_high > prev_high:
+            signal = "BUY"
+            entry = last_high
+            sl = prev_low
+            tp = entry + (entry - sl) * 1.5
+            tsl = entry + (entry - sl)
+            emoji = "🟢"
 
-    return signal, round(entry, 2), round(sl, 2), round(tp, 2), round(tsl, 2), emoji
+        # ---- Rejection SELL ----
+        elif prev_high > prev_ema and prev_close < prev_ema and last_low < prev_low:
+            signal = "SELL"
+            entry = last_low
+            sl = prev_high
+            tp = entry - (sl - entry) * 1.5
+            tsl = entry - (sl - entry)
+            emoji = "🔴"
 
+    except Exception as e:
+        logging.error(f"EMA Strategy Error: {e}")
+        return None, None, None, None, None, None
+
+    return signal, entry, sl, tp, tsl, emoji
 
 # MAIN LOOP
 while True:
