@@ -45,33 +45,52 @@ def fetch_data(symbol):
 
 # ... আগের লাইনের সব ঠিক আছে ...
 
-def ema_breakout_strategy(df):
+def ema_combo_strategy(df):
     df['21ema'] = df['close'].ewm(span=21, adjust=False).mean()
-
-    last = df.iloc[-1:]
-    prev = df.iloc[-2:-1]
+    
+    last = df.iloc[-1]
+    prev = df.iloc[-2]
 
     signal = None
     entry = sl = tp = tsl = emoji = ""
 
-    if prev['close'].iloc[0].item() > prev['21ema'].iloc[0].item() and last['high'].iloc[0].item() > prev['high'].iloc[0].item():
+    # ---- Breakout BUY ----
+    if prev['close'] > prev['21ema'] and last['high'] > prev['high']:
         signal = "BUY"
-        entry = last['high'].iloc[0].item()
-        sl = prev['low'].iloc[0].item()
+        entry = last['high']
+        sl = prev['low']
         tp = entry + (entry - sl) * 1.5
         tsl = entry + (entry - sl)
         emoji = "🟢"
 
-    elif prev['close'].iloc[0].item() < prev['21ema'].iloc[0].item() and last['low'].iloc[0].item() < prev['low'].iloc[0].item():
+    # ---- Breakout SELL ----
+    elif prev['close'] < prev['21ema'] and last['low'] < prev['low']:
         signal = "SELL"
-        entry = last['low'].iloc[0].item()
-        sl = prev['high'].iloc[0].item()
+        entry = last['low']
+        sl = prev['high']
+        tp = entry - (sl - entry) * 1.5
+        tsl = entry - (sl - entry)
+        emoji = "🔴"
+
+    # ---- Rejection BUY ----
+    elif prev['low'] < prev['21ema'] and prev['close'] > prev['21ema'] and last['high'] > prev['high']:
+        signal = "BUY"
+        entry = last['high']
+        sl = prev['low']
+        tp = entry + (entry - sl) * 1.5
+        tsl = entry + (entry - sl)
+        emoji = "🟢"
+
+    # ---- Rejection SELL ----
+    elif prev['high'] > prev['21ema'] and prev['close'] < prev['21ema'] and last['low'] < prev['low']:
+        signal = "SELL"
+        entry = last['low']
+        sl = prev['high']
         tp = entry - (sl - entry) * 1.5
         tsl = entry - (sl - entry)
         emoji = "🔴"
 
     return signal, entry, sl, tp, tsl, emoji
-
 # MAIN LOOP
 while True:
     signal_found = False
