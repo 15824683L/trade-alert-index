@@ -44,29 +44,31 @@ def fetch_data(symbol):
         return None
 
 def ema_breakout_strategy(df):
-    if len(df) < 3:
-        return "NO SIGNAL", None, None, None, None, None
+    df['21ema'] = df['close'].ewm(span=21, adjust=False).mean()
+    
+    last = df.iloc[-1:]
+    prev = df.iloc[-2:-1]
 
-    last = df.iloc[-1]
-    prev = df.iloc[-2]
+    signal = None
+    entry = sl = tp = tsl = emoji = ""
 
-    # BUY setup
-    if float(prev['close']) > float(prev['21ema']) and float(last['high']) > float(prev['high']):
-        entry = round(prev['high'], 2)
-        sl = round(prev['low'], 2)
-        tp = round(entry + (entry - sl) * 2, 2)
-        tsl = round(entry + (entry - sl) * 1.5, 2)
-        return "BUY", entry, sl, tp, tsl, "🟢"
+    if float(prev['close'].iloc[0]) > float(prev['21ema'].iloc[0]) and float(last['high'].iloc[0]) > float(prev['high'].iloc[0]):
+        signal = "BUY"
+        entry = last['high'].iloc[0]
+        sl = prev['low'].iloc[0]
+        tp = entry + (entry - sl) * 1.5
+        tsl = entry + (entry - sl)
+        emoji = "🟢"
 
-    # SELL setup
-    if float(prev['close']) < float(prev['21ema']) and float(last['low']) < float(prev['low']):
-        entry = round(prev['low'], 2)
-        sl = round(prev['high'], 2)
-        tp = round(entry - (sl - entry) * 2, 2)
-        tsl = round(entry - (sl - entry) * 1.5, 2)
-        return "SELL", entry, sl, tp, tsl, "🔴"
+    elif float(prev['close'].iloc[0]) < float(prev['21ema'].iloc[0]) and float(last['low'].iloc[0]) < float(prev['low'].iloc[0]):
+        signal = "SELL"
+        entry = last['low'].iloc[0]
+        sl = prev['high'].iloc[0]
+        tp = entry - (sl - entry) * 1.5
+        tsl = entry - (sl - entry)
+        emoji = "🔴"
 
-    return "NO SIGNAL", None, None, None, None, None
+    return signal, entry, sl, tp, tsl, emoji
 # MAIN LOOP
 while True:
     signal_found = False
