@@ -98,7 +98,7 @@ while True:
     for stock in INDIAN_STOCKS:
         df = fetch_data(stock)
         if df is not None and not df.empty:
-            signal, entry, sl, tp, tsl, emoji = ema_breakout_strategy(df)
+            signal, entry, sl, tp, tsl, emoji = ema_combo_strategy(df)
 
             if signal and stock not in active_trades:
                 signal_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
