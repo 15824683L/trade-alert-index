@@ -47,7 +47,10 @@ def fetch_data(symbol):
 
 def ema_combo_strategy(df):
     df['21ema'] = df['close'].ewm(span=21, adjust=False).mean()
-    
+
+    if len(df) < 3:
+        return None, None, None, None, None, None  # not enough data
+
     last = df.iloc[-1]
     prev = df.iloc[-2]
 
@@ -55,37 +58,37 @@ def ema_combo_strategy(df):
     entry = sl = tp = tsl = emoji = ""
 
     # ---- Breakout BUY ----
-    if prev['close'] > prev['21ema'] and last['high'] > prev['high']:
+    if float(prev['close']) > float(prev['21ema']) and float(last['high']) > float(prev['high']):
         signal = "BUY"
-        entry = last['high']
-        sl = prev['low']
+        entry = float(last['high'])
+        sl = float(prev['low'])
         tp = entry + (entry - sl) * 1.5
         tsl = entry + (entry - sl)
         emoji = "🟢"
 
     # ---- Breakout SELL ----
-    elif prev['close'] < prev['21ema'] and last['low'] < prev['low']:
+    elif float(prev['close']) < float(prev['21ema']) and float(last['low']) < float(prev['low']):
         signal = "SELL"
-        entry = last['low']
-        sl = prev['high']
+        entry = float(last['low'])
+        sl = float(prev['high'])
         tp = entry - (sl - entry) * 1.5
         tsl = entry - (sl - entry)
         emoji = "🔴"
 
     # ---- Rejection BUY ----
-    elif prev['low'] < prev['21ema'] and prev['close'] > prev['21ema'] and last['high'] > prev['high']:
+    elif float(prev['low']) < float(prev['21ema']) and float(prev['close']) > float(prev['21ema']) and float(last['high']) > float(prev['high']):
         signal = "BUY"
-        entry = last['high']
-        sl = prev['low']
+        entry = float(last['high'])
+        sl = float(prev['low'])
         tp = entry + (entry - sl) * 1.5
         tsl = entry + (entry - sl)
         emoji = "🟢"
 
     # ---- Rejection SELL ----
-    elif prev['high'] > prev['21ema'] and prev['close'] < prev['21ema'] and last['low'] < prev['low']:
+    elif float(prev['high']) > float(prev['21ema']) and float(prev['close']) < float(prev['21ema']) and float(last['low']) < float(prev['low']):
         signal = "SELL"
-        entry = last['low']
-        sl = prev['high']
+        entry = float(last['low'])
+        sl = float(prev['high'])
         tp = entry - (sl - entry) * 1.5
         tsl = entry - (sl - entry)
         emoji = "🔴"
