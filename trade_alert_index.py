@@ -83,7 +83,7 @@ while True:
                     f"Time: `{signal_time}`\n"
                     f"Entry: `{entry}`\nSL: `{sl}`\nTP: `{tp}`\nTSL: `{tsl}`"
                 )
-                send_telegram_message(msg, TELEGRAM_CHAT_ID)
+                send_telegram_message(msg, TELEGRAM_GROUP_CHAT_ID)
                 send_telegram_message(msg, TELEGRAM_GROUP_CHAT_ID)
 
                 active_trades[stock] = {
